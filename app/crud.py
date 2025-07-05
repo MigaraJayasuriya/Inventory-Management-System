@@ -40,6 +40,9 @@ def create_category(db: Session, category: schemas.CategoryCreate):
 def get_categories(db: Session):
     return db.query(models.Category).all()
 
+def get_category(db: Session, category_id: int):
+    return db.query(models.Category).filter(models.Category.id == category_id).first()
+
 def create_supplier(db: Session, supplier: schemas.SupplierCreate):
     db_supplier = models.Supplier(**supplier.dict())
     db.add(db_supplier)
@@ -50,3 +53,5 @@ def create_supplier(db: Session, supplier: schemas.SupplierCreate):
 def get_suppliers(db: Session):
     return db.query(models.Supplier).all()
 
+def get_supplier(db: Session, supplier_id: int):
+    return db.query(models.Supplier).filter(models.Supplier.id == supplier_id).first()

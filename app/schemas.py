@@ -33,7 +33,7 @@ class ItemBase(BaseModel):
     min_stock_level: int = 0
     cost_price: float
     selling_price: float
-    location: str
+    branch_location: str
     category_id: Optional[int]
     supplier_id: Optional[int]
 

@@ -16,6 +16,32 @@ def get_db():
     finally:
         db.close()
 
+@router.get("/items/filter", response_model=list[schemas.Item])
+def filter_items(
+    db: Session = Depends(get_db),
+    category_id: Optional[int] = Query(None),
+    supplier_id: Optional[int] = Query(None),
+    branch_location: Optional[str] = Query(None),
+    start_date: Optional[datetime] = Query(None),
+    end_date: Optional[datetime] = Query(None),
+):
+    query = db.query(models.Item)
+
+    if category_id:
+        query = query.filter(models.Item.category_id == category_id)
+    if supplier_id:
+        query = query.filter(models.Item.supplier_id == supplier_id)
+    if branch_location:
+        query = query.filter(models.Item.branch_location == branch_location)
+    if start_date and end_date:
+        query = query.filter(models.Item.date_added.between(start_date, end_date))
+    elif start_date:
+        query = query.filter(models.Item.date_added >= start_date)
+    elif end_date:
+        query = query.filter(models.Item.date_added <= end_date)
+
+    return query.all()
+
 @router.get("/items/", response_model=list[schemas.Item])
 def read_items(db: Session = Depends(get_db)):
     return crud.get_items(db)
@@ -54,6 +80,13 @@ def add_category(category: schemas.CategoryCreate, db: Session = Depends(get_db)
 def list_categories(db: Session = Depends(get_db)):
     return crud.get_categories(db)
 
+@router.get("categories/{category_id}", response_model=schemas.Category)
+def get_category(category_id: int, db: Session = Depends(get_db)):
+    db_category = crud.get_category(db, category_id)
+    if not db_category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    return db_category
+
 # Suppliers
 @router.post("/suppliers/", response_model=schemas.Supplier)
 def add_supplier(supplier: schemas.SupplierCreate, db: Session = Depends(get_db)):
@@ -63,39 +96,20 @@ def add_supplier(supplier: schemas.SupplierCreate, db: Session = Depends(get_db)
 def list_suppliers(db: Session = Depends(get_db)):
     return crud.get_suppliers(db)
 
-@router.get("/items/filter", response_model=list[schemas.Item])
-def filter_items(
-    db: Session = Depends(get_db),
-    category_id: Optional[int] = Query(None),
-    supplier_id: Optional[int] = Query(None),
-    location: Optional[str] = Query(None),
-    start_date: Optional[datetime] = Query(None),
-    end_date: Optional[datetime] = Query(None),
-):
-    query = db.query(models.Item)
+@router.get("/suppliers/{supplier_id}", response_model=schemas.Supplier)
+def get_supplier(supplier_id: int, db: Session = Depends(get_db)):
+    db_supplier = crud.get_supplier(db, supplier_id)
+    if not db_supplier:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+    return db_supplier
 
-    if category_id:
-        query = query.filter(models.Item.category_id == category_id)
-    if supplier_id:
-        query = query.filter(models.Item.supplier_id == supplier_id)
-    if location:
-        query = query.filter(models.Item.location == location)
-    if start_date and end_date:
-        query = query.filter(models.Item.date_added.between(start_date, end_date))
-    elif start_date:
-        query = query.filter(models.Item.date_added >= start_date)
-    elif end_date:
-        query = query.filter(models.Item.date_added <= end_date)
-
-    return query.all()
-
-@router.get("/items/low-stock", response_model=list[schemas.Item])
+@router.get("/low-stock", response_model=list[schemas.Item])
 def get_low_stock_items(db: Session = Depends(get_db)):
     return db.query(models.Item).filter(
         models.Item.quantity < models.Item.min_stock_level
     ).all()
 
-@router.get("/items/search", response_model=list[schemas.Item])
+@router.get("/items-Search", response_model=list[schemas.Item])
 def search_items(query: str = Query(..., min_length=1), db: Session = Depends(get_db)):
     search_term = f"%{query}%"
     results = db.query(models.Item).filter(
