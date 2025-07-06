@@ -25,12 +25,13 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 # Exampl endpoint to check if the API is running
 @router.get("/", status_code=status.HTTP_200_OK)
 async def root(user: user_dependency, db: Session = Depends(get_db)):
-    if user is None:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+    """if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")"""
     return {"message": "Welcome to the Inventory Management API"}
 
 @router.get("/items/filter", response_model=list[schemas.Item])
 def filter_items(
+    user: user_dependency,
     db: Session = Depends(get_db),
     category_id: Optional[int] = Query(None),
     supplier_id: Optional[int] = Query(None),
@@ -38,6 +39,8 @@ def filter_items(
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None),
 ):
+    if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
     query = db.query(models.Item)
 
     if category_id:
