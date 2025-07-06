@@ -39,3 +39,13 @@ class Item(Base):
 
     category = relationship("Category", back_populates="items")
     supplier = relationship("Supplier", back_populates="items")
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    email = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
+    is_active = Column(Integer, default=1)  # 1 for active, 0 for inactive
+    is_superuser = Column(Integer, default=0)  # 1 for superuser, 0 for regular user

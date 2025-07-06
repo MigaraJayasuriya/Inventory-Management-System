@@ -1,9 +1,12 @@
+from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from . import crud, schemas, database
 from typing import Optional
 from fastapi import Query
 from datetime import datetime
+from starlette import status
+from .auth_doc import get_current_user
 
 from . import models
 
@@ -15,6 +18,16 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# Dependency to get the current user
+user_dependency = Annotated[dict, Depends(get_current_user)]
+
+# Exampl endpoint to check if the API is running
+@router.get("/", status_code=status.HTTP_200_OK)
+async def root(user: user_dependency, db: Session = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return {"message": "Welcome to the Inventory Management API"}
 
 @router.get("/items/filter", response_model=list[schemas.Item])
 def filter_items(
