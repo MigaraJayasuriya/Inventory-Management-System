@@ -56,29 +56,45 @@ def filter_items(
     return query.all()
 
 @router.get("/items/", response_model=list[schemas.Item])
-def read_items(db: Session = Depends(get_db)):
+def read_items(user:user_dependency, db: Session = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
     return crud.get_items(db)
 
 @router.post("/items/", response_model=schemas.Item)
-def create_item(item: schemas.ItemCreate, db: Session = Depends(get_db)):
+def create_item(user:user_dependency, item: schemas.ItemCreate, db: Session = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    if not user.get("is_superuser", False):
+        raise HTTPException(status_code=403, detail="You do not have permission to perform this action")
     return crud.create_item(db, item)
 
 @router.get("/items/{item_id}", response_model=schemas.Item)
-def read_item(item_id: int, db: Session = Depends(get_db)):
+def read_item(user:user_dependency, item_id: int, db: Session = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
     db_item = crud.get_item(db, item_id)
     if not db_item:
         raise HTTPException(status_code=404, detail="Item not found")
     return db_item
 
 @router.put("/items/{item_id}", response_model=schemas.Item)
-def update_item(item_id: int, item: schemas.ItemUpdate, db: Session = Depends(get_db)):
+def update_item(user:user_dependency, item_id: int, item: schemas.ItemUpdate, db: Session = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    if not user.get("is_superuser", False):
+        raise HTTPException(status_code=403, detail="You do not have permission to perform this action")
     db_item = crud.update_item(db, item_id, item)
     if not db_item:
         raise HTTPException(status_code=404, detail="Item not found")
     return db_item
 
 @router.delete("/items/{item_id}")
-def delete_item(item_id: int, db: Session = Depends(get_db)):
+def delete_item(user:user_dependency, item_id: int, db: Session = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    if not user.get("is_superuser", False):
+        raise HTTPException(status_code=403, detail="You do not have permission to perform this action")
     item = crud.delete_item(db, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -86,15 +102,23 @@ def delete_item(item_id: int, db: Session = Depends(get_db)):
 
 # Categories
 @router.post("/categories/", response_model=schemas.Category)
-def add_category(category: schemas.CategoryCreate, db: Session = Depends(get_db)):
+def add_category(user:user_dependency, category: schemas.CategoryCreate, db: Session = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    if not user.get("is_superuser", False):
+        raise HTTPException(status_code=403, detail="You do not have permission to perform this action")
     return crud.create_category(db, category)
 
 @router.get("/categories/", response_model=list[schemas.Category])
-def list_categories(db: Session = Depends(get_db)):
+def list_categories(user:user_dependency, db: Session = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
     return crud.get_categories(db)
 
-@router.get("categories/{category_id}", response_model=schemas.Category)
-def get_category(category_id: int, db: Session = Depends(get_db)):
+@router.get("/categories/{category_id}", response_model=schemas.Category)
+def get_category(user:user_dependency, category_id: int, db: Session = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
     db_category = crud.get_category(db, category_id)
     if not db_category:
         raise HTTPException(status_code=404, detail="Category not found")
@@ -102,28 +126,42 @@ def get_category(category_id: int, db: Session = Depends(get_db)):
 
 # Suppliers
 @router.post("/suppliers/", response_model=schemas.Supplier)
-def add_supplier(supplier: schemas.SupplierCreate, db: Session = Depends(get_db)):
+def add_supplier(user:user_dependency, supplier: schemas.SupplierCreate, db: Session = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    if not user.get("is_superuser", False):
+        raise HTTPException(status_code=403, detail="You do not have permission to perform this action")
     return crud.create_supplier(db, supplier)
 
 @router.get("/suppliers/", response_model=list[schemas.Supplier])
-def list_suppliers(db: Session = Depends(get_db)):
+def list_suppliers(user:user_dependency, db: Session = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
     return crud.get_suppliers(db)
 
 @router.get("/suppliers/{supplier_id}", response_model=schemas.Supplier)
-def get_supplier(supplier_id: int, db: Session = Depends(get_db)):
+def get_supplier(user:user_dependency, supplier_id: int, db: Session = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
     db_supplier = crud.get_supplier(db, supplier_id)
     if not db_supplier:
         raise HTTPException(status_code=404, detail="Supplier not found")
     return db_supplier
 
 @router.get("/low-stock", response_model=list[schemas.Item])
-def get_low_stock_items(db: Session = Depends(get_db)):
+def get_low_stock_items(user:user_dependency, db: Session = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    if not user.get("is_superuser", False):
+        raise HTTPException(status_code=403, detail="You do not have permission to perform this action")
     return db.query(models.Item).filter(
         models.Item.quantity < models.Item.min_stock_level
     ).all()
 
 @router.get("/items-Search", response_model=list[schemas.Item])
-def search_items(query: str = Query(..., min_length=1), db: Session = Depends(get_db)):
+def search_items(user:user_dependency, query: str = Query(..., min_length=1), db: Session = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
     search_term = f"%{query}%"
     results = db.query(models.Item).filter(
         (models.Item.name.ilike(search_term)) | (models.Item.description.ilike(search_term))
